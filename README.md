@@ -50,7 +50,7 @@ Kociemba is a Python/C implementation of Herbert Kociemba's Two-Phase algorithm 
 
 Read full documentation of Kociemba here -> [Link](https://pypi.org/project/kociemba/)
 
-
+the instructions are decoded to human voice instructions. This instructions are then written to the `output.js` file, which outputs this instructions as voice.
 
 ## Building docker image
 
