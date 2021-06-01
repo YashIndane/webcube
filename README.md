@@ -30,6 +30,7 @@ Start with Red face with the white face down, and take pictures in the order Red
 ## Working
 
 The six images of six faces have there respective `data_uri`, which are submitted by a form when you click `get solution`. This `data_uri` are converted to images and saved.
+Next the function from `order_image.py` renames and creates new images (format example face_0.png to face_5.png), according to images that have central tile colour matching in the order ``
 
 ## Building docker image
 
