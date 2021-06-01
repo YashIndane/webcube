@@ -21,3 +21,7 @@ pip3 install opencv-python
 yum install opencv opencv-devel opencv-python -y
 pip3 install kociemba
 ```
+
+## Usage
+
+This webapp runs on port no. `85` by default, but can be changed in the app.py `file`. To use take edge to edge and centred pics of the cube. 
