@@ -25,9 +25,11 @@ pip3 install kociemba
 ## Usage
 
 This webapp runs on port no. `85` by default, but can be changed in the `app.py` file. To use take edge to edge and centred pics of the cube. 
-
+Start with Red face with the white face down, and take pictures in the order Red -> Green -> Orange -> Blue -> Yellow -> White. After this click `get solution`.
 
 ## Working
+
+The six images of six faces have there respective `data_uri`, which are submitted by a form when you click `get solution`. This `data_uri` are converted to images and saved.
 
 ## Building docker image
 
