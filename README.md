@@ -24,4 +24,23 @@ pip3 install kociemba
 
 ## Usage
 
-This webapp runs on port no. `85` by default, but can be changed in the app.py `file`. To use take edge to edge and centred pics of the cube. 
+This webapp runs on port no. `85` by default, but can be changed in the `app.py` file. To use take edge to edge and centred pics of the cube. 
+
+
+## Working
+
+## Building docker image
+
+build docker image by ->
+
+`docker build -t <username>/<repo-name>:<version>`
+
+## deploying the image in Kubernetes
+
+create a deployment by ->
+
+`kubectl create deployment <deploy-name> --image <username>/<repo-name>:<version> `
+
+Scale the deployment if necessary and create a service by ->
+
+`kubectl expose <deploy-name> --port=85 --name=<service-name> --type=LoadBalancer`
