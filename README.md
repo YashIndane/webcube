@@ -60,6 +60,8 @@ build docker image by ->
 
 `docker build -t <username>/<repo-name>:<version>`
 
+I have also uploded already build image for this webapp on Docker Hub -> [Link](https://hub.docker.com/repository/docker/yashindane/webcube)
+
 ## deploying the image in Kubernetes
 
 create a deployment by ->
