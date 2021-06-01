@@ -30,7 +30,9 @@ Start with Red face with the white face down, and take pictures in the order Red
 ## Working
 
 The six images of six faces have there respective `data_uri`, which are submitted by a form when you click `get solution`. This `data_uri` are converted to images and saved.
-Next the function from `order_image.py` renames and creates new images (format example face_0.png to face_5.png), according to images that have central tile colour matching in the order ``
+Next the function `order` from `order_image.py` renames and creates new images (format example face_0.png to face_5.png), according to images that have central tile colour matching in the order `yellow -> green -> red -> white -> blue -> orange`. Naming images in this order is required for the cube to be solved. A cubestring is formed after predicting the tile colours and getting there respective notations.
+
+
 
 ## Building docker image
 
