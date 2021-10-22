@@ -10,18 +10,18 @@ Demo -> [Link](https://www.linkedin.com/posts/yash-indane-aa6534179_machinelearn
 This webapp requires a lot of extra modules and packages to be downloaded, It is recommanded to follow this order :
 
 ```
-yum install python3 -y
-yum install gcc-c++ -y
-yum install python3-devel -y 
-pip3 install flask 
-pip3 install Pillow
-pip3 install numpy
-pip3 install joblib
-pip3 install scikit-learn
-pip3 install scikit-build
-pip3 install opencv-python
-yum install opencv opencv-devel opencv-python -y
-pip3 install kociemba
+$ yum install python3 -y
+$ yum install gcc-c++ -y
+$ yum install python3-devel -y 
+$ pip3 install flask 
+$ pip3 install Pillow
+$ pip3 install numpy
+$ pip3 install joblib
+$ pip3 install scikit-learn
+$ pip3 install scikit-build
+$ pip3 install opencv-python
+$ yum install opencv opencv-devel opencv-python -y
+$ pip3 install kociemba
 ```
 
 ## Usage
@@ -60,7 +60,7 @@ the instructions are decoded to human voice instructions. This instructions are 
 
 build docker image by ->
 
-`docker build -t <username>/<repo-name>:<version>`
+`$ docker build -t <username>/<repo-name>:<version>`
 
 I have also uploded already build image for this webapp on Docker Hub -> [Link](https://hub.docker.com/repository/docker/yashindane/webcube)
 
@@ -68,8 +68,8 @@ I have also uploded already build image for this webapp on Docker Hub -> [Link](
 
 create a deployment by ->
 
-`kubectl create deployment <deploy-name> --image <username>/<repo-name>:<version> `
+`$ kubectl create deployment <deploy-name> --image <username>/<repo-name>:<version> `
 
 Scale the deployment if necessary and create a service by ->
 
-`kubectl expose <deploy-name> --port=85 --name=<service-name> --type=LoadBalancer`
+`$ kubectl expose <deploy-name> --port=85 --name=<service-name> --type=LoadBalancer`
