@@ -26,7 +26,7 @@ $ pip3 install kociemba
 
 ## Usage
 
-This webapp runs on port no. `85` by default, but can be changed in the `app.py` file. To use take edge to edge and centred pics of the cube. 
+This webapp runs on port no. `1185` by default, but can be changed in the `app.py` file. To use take edge to edge and centred pics of the cube. 
 Start with Red face with the white face down, and take pictures in the order Red -> Green -> Orange -> Blue -> Yellow -> White. After this click `get solution`.
 
 ![](example.png)
@@ -39,12 +39,12 @@ Next the function `order` from `order_image.py` renames and creates new images (
 ```py
 colour_mappings = {
 
-    "red" : "F",
-    "green" : "R",
-    "blue" : "L",
+    "red": "F",
+    "green": "R",
+    "blue": "L",
     "yellow": "U",
-    "white" : "D",
-    "orange" : "B"
+    "white": "D",
+    "orange": "B"
  
 }
 ```
@@ -72,4 +72,4 @@ create a deployment by ->
 
 Scale the deployment if necessary and create a service by ->
 
-`$ kubectl expose <deploy-name> --port=85 --name=<service-name> --type=LoadBalancer`
+`$ kubectl expose <deploy-name> --port=1185 --name=<service-name> --type=LoadBalancer`
