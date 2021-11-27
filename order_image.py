@@ -16,12 +16,15 @@ def order() :
     for n in range(6) :
       image = cv2.imread(f"face{n}.png")
       rgb_array = []
+
       for x in image[193][200] :
         rgb_array.append(x)
+
       n_array = np.array([rgb_array])
       arr = s_scalar.transform([rgb_array])
       value = model.predict(arr)
       index = value[0] - 1
+
       if colours[index] == color :
         cv2.imwrite(f"face_{counter}.png", image)
         counter += 1

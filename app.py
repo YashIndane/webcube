@@ -13,25 +13,22 @@ app = Flask("webcube")
 def input():
   return render_template("input.html")
 
-@app.route("/process" , methods = ["GET"])
+@app.route("/process", methods=["GET"])
 def get_instructions():
 
   for i in range(6):
     uri_string = request.args.get(f"ur{i}")
     uri_string = uri_string[uri_string.index(",") + 1:]
     im = Image.open(BytesIO(b64decode(uri_string)))
-    im.save(f"face{i}.png" , "PNG")
+    im.save(f"face{i}.png", "PNG")
 
   order()
-  kk = get_cubestring()
-  m = get_moves(kk)
-  # ss=""
-  #for v in m :
-  #  ss += v + "</br>"
+  generated_cubestring = get_cubestring()
+  moves = get_moves(generated_cubestring)
   
   gso("echo 'y' | cp static/k8s.js static/out.js")
 
-  for v in m :
+  for v in moves :
     v = '"' + v + '"' 
     gso(f"echo '  speak({v});' >> static/out.js")
     gso("echo '  await sleep(3500);' >> static/out.js")
@@ -39,4 +36,4 @@ def get_instructions():
 
   return render_template("output.html")
 
-app.run(host = "0.0.0.0" , port = 85)
+app.run(host="0.0.0.0", port=85)

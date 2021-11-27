@@ -2,6 +2,8 @@ FROM amazonlinux:latest
 
 MAINTAINER Yash Indane
 
+EXPOSE 85
+
 RUN yum install python3 -y && \
     yum install gcc-c++ -y && \
     yum install python3-devel -y && \
@@ -21,4 +23,3 @@ COPY . /webcube
 WORKDIR /webcube
 
 ENTRYPOINT python3 app.py
-

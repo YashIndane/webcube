@@ -10,16 +10,18 @@ def get_cubestring():
   
   cubestring = ""
   colours = ["orange", "red", "green", "blue", "yellow", "white"]
+  
   colour_mappings = {
 
-    "red" : "F",
-    "green" : "R",
-    "blue" : "L",
+    "red": "F",
+    "green": "R",
+    "blue": "L",
     "yellow": "U",
-    "white" : "D",
-    "orange" : "B"
+    "white": "D",
+    "orange": "B"
  
   }
+
   coordinates = [
 
     [59,95], [59,200], [59,305],
@@ -46,6 +48,3 @@ def get_cubestring():
     gso(f"echo 'y' | rm face_{i}.png")
       
   return cubestring
-        
-    
-  
