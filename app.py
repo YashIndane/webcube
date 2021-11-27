@@ -36,4 +36,4 @@ def get_instructions():
 
   return render_template("output.html")
 
-app.run(host="0.0.0.0", port=85)
+app.run(host="0.0.0.0", port=1185)

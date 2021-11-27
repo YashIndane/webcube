@@ -2,7 +2,7 @@ FROM amazonlinux:latest
 
 MAINTAINER Yash Indane
 
-EXPOSE 85
+EXPOSE 1185
 
 RUN yum install python3 -y && \
     yum install gcc-c++ -y && \
