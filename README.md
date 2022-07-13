@@ -26,7 +26,7 @@ $ pip3 install kociemba
 
 ## Usage
 
-This webapp runs on port no. `1185` by default, but can be changed in the `app.py` file. To use take edge to edge and centred pics of the cube. 
+This webapp runs on port no. `85` by default, but can be changed in the `app.py` file. To use take edge to edge and centred pics of the cube. 
 Start with Red face with the white face down, and take pictures in the order Red -> Green -> Orange -> Blue -> Yellow -> White. After this click `get solution`.
 
 ![](example.png)
