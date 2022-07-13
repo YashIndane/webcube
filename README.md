@@ -72,4 +72,4 @@ create a deployment by ->
 
 Scale the deployment if necessary and create a service by ->
 
-`$ kubectl expose <deploy-name> --port=1185 --name=<service-name> --type=LoadBalancer`
+`$ kubectl expose deployment <deploy-name> --port=1185 --name=<service-name> --type=LoadBalancer`
