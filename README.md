@@ -31,6 +31,18 @@ Start with Red face with the white face down, and take pictures in the order Red
 
 ![](example.png)
 
+## Running the container
+
+```
+$ sudo docker run -dit -p <PORT>:85 --name <NAME> yashindane/webcube:v1 
+```
+
+## Arm64v8 machines
+
+```
+$ sudo docker run --platform linux/arm64/v8 -dit -p <PORT>:85 --name <NAME> yashindane/webcube:linux-arm64v8
+```
+
 ## Working
 
 The six images of six faces have there respective `data_uri`, which are submitted by a form when you click `get solution`. This `data_uri` are converted to images and saved.
