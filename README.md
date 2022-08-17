@@ -43,6 +43,8 @@ $ sudo docker run -dit -p <PORT>:85 --name <NAME> yashindane/webcube:v1
 $ sudo docker run --platform linux/arm64/v8 -dit -p <PORT>:85 --name <NAME> yashindane/webcube:linux-arm64v8
 ```
 
+Code for arm64v8 version -> [link](https://github.com/YashIndane/webcube-arm64v8)
+
 ## Working
 
 The six images of six faces have there respective `data_uri`, which are submitted by a form when you click `get solution`. This `data_uri` are converted to images and saved.
