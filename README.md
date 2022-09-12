@@ -1,4 +1,4 @@
-![](https://img.shields.io/badge/-Flask-blue?style=for-the-badge&logo=flask) ![](https://img.shields.io/badge/views-35.7k-lightblue?style=for-the-badge&logo=linkedin) ![](https://img.shields.io/badge/likes-2.7k-lightblue?style=for-the-badge&logo=linkedin)
+![](https://img.shields.io/badge/-Flask-blue?style=for-the-badge&logo=flask) ![](https://img.shields.io/badge/impressions-79.7k-lightblue?style=for-the-badge&logo=linkedin) ![](https://img.shields.io/badge/likes-2.7k-lightblue?style=for-the-badge&logo=linkedin)
 
 # webcube
 Rubik's cube assistant on Flask webapp. This webapp accepts the six faces of your cube and gives you the voice instructions as a response.
