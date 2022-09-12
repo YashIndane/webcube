@@ -37,6 +37,12 @@ Start with Red face with the white face down, and take pictures in the order Red
 $ sudo docker run -dit -p <PORT>:85 --name <NAME> yashindane/webcube:v1 
 ```
 
+## Running the container using podman
+
+```
+$ sudo podman run -dit -p <PORT>:85 --name <NAME> docker.io/yashindane/webcube:v1 
+```
+
 ## Arm64v8 machines
 
 ```
