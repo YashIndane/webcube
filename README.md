@@ -26,8 +26,10 @@ $ pip3 install kociemba
 
 ## Usage
 
+Navigate to `http://<IP>:<PORT>/input`.
 This webapp runs on port no. `85` by default, but can be changed in the `app.py` file. To use take edge to edge and centred pics of the cube. 
-Start with Red face with the white face down, and take pictures in the order Red -> Green -> Orange -> Blue -> Yellow -> White. After this click `get solution`.
+Start with `Red` face with the `White` face down, and take pictures in the order `Red -> Green -> Orange -> Blue -> Yellow -> White`. After this click `get solution`. While listening to the instructions 
+face the `Red` centred face with the `White` centred face down.
 
 ![example](https://user-images.githubusercontent.com/53041219/207019696-abfe8bbe-4ce9-48fb-bd4a-268b4ab9b7c7.png)
 
@@ -93,3 +95,14 @@ create a deployment by ->
 Scale the deployment if necessary and create a service by ->
 
 `$ kubectl expose deployment <deploy-name> --port=85 --name=<service-name> --type=LoadBalancer`
+
+## Prerequisite browser settings
+
+### 1. Remove chrome managed by your organisation (Optional)
+
+Visit this link -> [link](https://www.youtube.com/watch?v=DaLaWChdyug)
+
+### 2. Edit chrome flags for camera access
+
+Navigate to `chrome://flags/#unsafely-treat-insecure-origin-as-secure` on chrome browser and add `http://<IP>:<PORT>` inside `Insecure origins treated as secure box` and click enable and reload the chrome page.
+After usage just remove the entry and click disable.
