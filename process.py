@@ -6,15 +6,16 @@ from typing import Optional, List, Tuple
 grid_size: int = 3
 
 
-def read_image():
-    global image, cell_h, cell_w
-    image = cv2.imread(f"face0.png")
+def read_faces():
+    for i in range(6):
+        image = cv2.imread(f"face{i}.png")
+        h, w = image.shape[:2]
+        cell_h = h // grid_size
+        cell_w = w // grid_size
 
-    h, w = image.shape[:2]
-    cell_h = h // grid_size
-    cell_w = w // grid_size
-
-res = []
+        yield(
+            [image, cell_h, cell_w]
+        )
 
 @dataclass
 class ColorDef:
@@ -142,15 +143,19 @@ def detect_tile_color(
         color_lab = classify_color_lab_fallback(tile)
         return {"color": color_lab, "confidence": round(confidence, 3), "method": "lab_fallback"}
 
-def getcols():
-  read_image()
-  for row in range(grid_size):
-    for col in range(grid_size):
-        y0, y1 = row * cell_h, (row + 1) * cell_h
-        x0, x1 = col * cell_w, (col + 1) * cell_w
-        roi = image[y0:y1, x0:x1]
-        result = detect_tile_color(roi)
-        res.append(result)
+def getcols() -> List:
+  faces, res = read_faces(), []
+  for j in range(6):
+      face, cell_h, cell_w = next(faces)
+
+      for row in range(grid_size):
+         for col in range(grid_size):
+            y0, y1 = row * cell_h, (row + 1) * cell_h
+            x0, x1 = col * cell_w, (col + 1) * cell_w
+            roi = face[y0:y1, x0:x1]
+            result = detect_tile_color(roi)
+            res.append(result)
   print(f"RESPONSE: {res}", '\n', sep='\n')
+  return res
 
 

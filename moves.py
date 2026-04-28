@@ -1,11 +1,5 @@
-import kociemba
-
-def get_moves(cs) :
-
-  kociemba_string = kociemba.solve(cs)
-
-  speaking_cmds = {
-
+def get_moves(solve_steps) :
+    speaking_cmds = {
                  'L'   : 'Rotate left face clockwise',
                  'R'   : 'Rotate right face clockwise',
                  'U'   : 'Rotate top face clockwise',
@@ -23,14 +17,8 @@ def get_moves(cs) :
                  'U2'  : 'Rotate top face twice',
                  'D2'  : 'Rotate bottom face twice',
                  'F2'  : 'Rotate front face twice',
-                 'B2'  : 'Rotate back face twice'
-
-  }
-
-  csa = kociemba_string.split(" ")
-  
-  final_commands = []
-  for x in csa :
-    final_commands.append(speaking_cmds[x])
-
-  return final_commands
+                 'B2'  : 'Rotate back face twice',
+                 }
+    return list(
+        map(lambda x: speaking_cmds[x], solve_steps.split())
+    )
