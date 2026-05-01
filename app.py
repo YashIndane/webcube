@@ -6,6 +6,7 @@ from PIL import Image
 from io import BytesIO
 from subprocess import getstatusoutput as gso
 from get_cubstring2 import generate_cubestring
+#from get_cubestring_gemini_rl import generate_cubestring 
 from solve_cube import get_moves
 
 app = Flask("webcube")
@@ -23,6 +24,11 @@ def get_instructions():
     im = Image.open(BytesIO(b64decode(uri_string)))
     im.save(f"face{i}.png", "PNG")
 
+  #openai
+  #cubestring = generate_cubestring()
+  #moves = get_moves(cubestring)
+
+  #gemini
   cubestring = generate_cubestring()
   moves = get_moves(cubestring)
 

@@ -1,3 +1,4 @@
+#openai
 from openai import OpenAI
 from pathlib import Path
 from PIL import Image, ImageEnhance, ImageFilter
@@ -6,7 +7,7 @@ import json
 import sys
 import io
 
-client = OpenAI(api_key="<OPENAI-API-KEY>")
+client = OpenAI(api_key="")
 
 # ──────────────────────────────────────────────
 # 1. IMAGE PREPROCESSING (lighter touch for good lighting)

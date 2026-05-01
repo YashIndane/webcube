@@ -1,4 +1,4 @@
-FROM webcube-llm-base:v1
+FROM webcube-dualllm-base:v1
 
 MAINTAINER Yash Indane
 

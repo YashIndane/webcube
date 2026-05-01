@@ -15,51 +15,34 @@
       outline: none;
       background: none;
       padding: 0;
-      display: block;
-      margin: 16px auto 10px auto;
+      position: absolute;
       border-radius: 8px;
-      width: 400px;
-      height: 40px;
+      width: 352px;
+      height: 30px;
+      top: 440px;
     }
     #sol {
-      display: block;
-      margin: 0 auto;
+      position: absolute;
+      left: 370px;
+      top: 440px;
       background-color: #50A6C2;
       border: none;
       border-radius: 8px;
       color: white;
-      width: 400px;
-      height: 40px;
+      width: 352px;
+      height: 30px;
     }
     #canvas {
       display: none;
     }
-    #results {
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-    #fo input[type="text"] {
-      display: block;
-      font-size: 10px;
-      width: 300px;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      margin: 2px 0;
-      color: #aaa;
-      background: none;
-      border: none;
-    }
   </style>
-  <body style="background-color:#191919; display:flex; flex-direction:column; align-items:center;">
+  <body style="background-color:#191919;">
 
     <!-- Replaced webcam.js div with native video element -->
     <video id="camera" autoplay playsinline width="400" height="400"></video>
     <canvas id="canvas" width="400" height="400"></canvas>
 
     <button onclick="take_snapshot()" id="but" class="btn btn-primary">TAKE SNAPSHOT</button>
-    <div id="sol-container"></div>
 
     <div id="results">
       <!-- Fixed: GET → POST -->
@@ -82,8 +65,6 @@
     });
 
     function take_snapshot() {
-      if (counter >= 6) return; // stop after 6 snapshots
-
       var video = document.getElementById('camera');
       var canvas = document.getElementById('canvas');
       canvas.getContext('2d').drawImage(video, 0, 0, 400, 400);
@@ -98,27 +79,17 @@
       k.name = "ur".concat(im);
       k.id = "xo".concat(im);
 
+      // Submit button
+      var i = document.createElement('input');
+      i.type = "submit";
+      i.value = "GET SOLUTION";
+      i.id = "sol";
+      i.className = "btn btn-outline-dark";
+
       document.getElementById('fo').appendChild(k);
+      document.getElementById('fo').appendChild(i);
 
       counter += 1;
-
-      // Show GET SOLUTION button only after 6 snapshots
-      if (counter === 6) {
-        var i = document.createElement('input');
-        i.type = "submit";
-        i.value = "GET SOLUTION";
-        i.id = "sol";
-        i.setAttribute('form', 'fo');
-        i.className = "btn btn-outline-dark";
-        document.getElementById('sol-container').appendChild(i);
-
-        // Disable TAKE SNAPSHOT button
-        document.getElementById('but').disabled = true;
-        document.getElementById('but').innerText = "6/6 SNAPSHOTS TAKEN";
-      } else {
-        // Update button label to show progress
-        document.getElementById('but').innerText = "TAKE SNAPSHOT (" + counter + "/6)";
-      }
     }
   </script>
 </html>
