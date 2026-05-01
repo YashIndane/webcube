@@ -7,7 +7,6 @@ import json
 import sys
 import io
 
-client = OpenAI(api_key="")
 
 # ──────────────────────────────────────────────
 # 1. IMAGE PREPROCESSING (lighter touch for good lighting)
@@ -318,7 +317,10 @@ def print_grid(grid: list):
     return flat
 
 
-def generate_cubestring():
+def generate_cubestring(*, api_key: str):
+    global client
+    client = OpenAI(api_key=api_key)
+
     KOCIEMBA_MAPPINGS = {
                         'blue': 'L',
                         'red': 'F',

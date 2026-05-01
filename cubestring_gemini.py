@@ -1,6 +1,6 @@
-import google.generativeai as genai
+#import google.generativeai as genai
 from PIL import Image, ImageEnhance, ImageFilter
-from collections import Counter, deque
+from collections import Counter
 import json
 import sys
 import time
@@ -9,41 +9,8 @@ import time
 # CONFIGURATION
 # ──────────────────────────────────────────────
 
-genai.configure(api_key="")
+
 MODEL = "gemini-2.5-flash"
-
-
-# ──────────────────────────────────────────────
-# RATE LIMITER — gemini-2.5-flash allows 5 RPM
-# ──────────────────────────────────────────────
-
-class RateLimiter:
-    """Sliding window rate limiter — ensures max N calls per 60 seconds."""
-    def __init__(self, max_calls: int = 5, period: int = 60):
-        self.max_calls = max_calls
-        self.period    = period
-        self.calls     = deque()  # timestamps of recent calls
-
-    def wait(self):
-        now = time.time()
-
-        # Remove timestamps older than the window
-        while self.calls and now - self.calls[0] >= self.period:
-            self.calls.popleft()
-
-        if len(self.calls) >= self.max_calls:
-            # Must wait until the oldest call falls outside the window
-            wait_time = self.period - (now - self.calls[0]) + 1
-            print(f"  ⏳ Rate limit reached ({self.max_calls} RPM) — waiting {wait_time:.1f}s...")
-            time.sleep(wait_time)
-            # Clean up again after sleeping
-            now = time.time()
-            while self.calls and now - self.calls[0] >= self.period:
-                self.calls.popleft()
-
-        self.calls.append(time.time())
-
-rate_limiter = RateLimiter(max_calls=5, period=60)
 
 
 # ──────────────────────────────────────────────
@@ -203,9 +170,7 @@ def call_gemini(parts: list, schema: dict, max_tokens: int = 2048) -> dict:
     """
     Call Gemini with forced JSON schema output.
     Handles empty/null responses gracefully.
-    Rate limited to 5 RPM for gemini-2.5-flash.
     """
-    rate_limiter.wait()  # enforce rate limit before every API call
     model = genai.GenerativeModel(
         MODEL,
         generation_config=genai.GenerationConfig(
@@ -408,7 +373,8 @@ def print_grid(grid: list) -> list:
     return flat
 
 
-def generate_cubestring():
+def generate_cubestring(*, api_key):
+    genai.configure(api_key=api_key)
     KOCIEMBA_MAPPINGS = {
                         'blue': 'L',
                         'red': 'F',
@@ -425,6 +391,8 @@ def generate_cubestring():
         grid = analyze_rubiks_face(IMAGE_PATH)
         #appending the flat color list of a face
         COL_LIST.extend(print_grid(grid))
+        #to tackle rate limit
+        time.sleep(5)
     
     cubestring = "".join(
         KOCIEMBA_MAPPINGS[color.lower()]

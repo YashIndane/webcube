@@ -1,4 +1,4 @@
-FROM webcube-dualllm-base:v1
+FROM yashindane/webcube-dualllm-base:v1
 
 MAINTAINER Yash Indane
 
@@ -10,4 +10,4 @@ COPY . /webcube
 
 WORKDIR /webcube
 
-ENTRYPOINT python3 app.py
+ENTRYPOINT ["python3", "app.py"]
