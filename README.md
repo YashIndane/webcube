@@ -5,70 +5,37 @@ Rubik's cube assistant on Flask webapp. This webapp accepts the six faces of you
 
 Demo -> [Link](https://www.linkedin.com/posts/yash-indane-aa6534179_machinelearning-flask-python-activity-6805902901546901507-dN6M)
 
-## Requirements
-
-This webapp requires a lot of extra modules and packages to be downloaded, It is recommanded to follow this order :
-
-```
-$ yum install python3 -y
-$ yum install gcc-c++ -y
-$ yum install python3-devel -y 
-$ pip3 install flask 
-$ pip3 install Pillow
-$ pip3 install numpy
-$ pip3 install joblib
-$ pip3 install scikit-learn
-$ pip3 install scikit-build
-$ pip3 install opencv-python
-$ yum install opencv opencv-devel opencv-python -y
-$ pip3 install kociemba
-```
-
 ## Usage
 
 Navigate to `http://<IP>:<PORT>/input`.
 This webapp runs on port no. `85` by default, but can be changed in the `app.py` file. To use take edge to edge and centred pics of the cube. 
-Start with `Red` face with the `White` face down, and take pictures in the order `Red -> Green -> Orange -> Blue -> Yellow -> White`. After this click `get solution`. While listening to the instructions 
-face the `Red` centred face with the `White` centred face down.
+Start with `Red` face with the `White` face down, and take pictures in the order `Yellow -> Green -> Red -> White -> Blue -> Orange`. After this click `get solution`. While listening to the instructions face the `Red` centred face with the `White` centred face down.
 
 ![example](https://user-images.githubusercontent.com/53041219/207019696-abfe8bbe-4ce9-48fb-bd4a-268b4ab9b7c7.png)
 
 ## Running the container
 
 ```
-$ sudo docker run -dit -p <PORT>:85 --name <NAME> yashindane/webcube:v1 
+sudo docker run -dit -p 5000:85 --name <container-name> <image:version> --apikey="<OPENAI/GEMINI API-KEY>" --mod="<openai/gemini>"
 ```
-
-## Running the container using podman
-
-```
-$ sudo podman run -dit -p <PORT>:85 --name <NAME> docker.io/yashindane/webcube:v1 
-```
-
-## Arm64v8 machines
-
-```
-$ sudo docker run --platform linux/arm64/v8 -dit -p <PORT>:85 --name <NAME> yashindane/webcube:linux-arm64v8
-```
-
-Code for arm64v8 version -> [link](https://github.com/YashIndane/webcube-arm64v8)
 
 ## Working
 
-The six images of six faces have there respective `data_uri`, which are submitted by a form when you click `get solution`. This `data_uri` are converted to images and saved.
-Next the function `order` from `order_image.py` renames and creates new images (format example face_0.png to face_5.png), according to images that have central tile colour matching in the order `yellow -> green -> red -> white -> blue -> orange`. Naming images in this order is required for the cube to be solved. A cubestring is formed after predicting the tile colours and getting there respective notations.
+The six images of six faces have there respective `data_uri`, which are submitted by a form when you click `get solution`. This `data_uri` are converted to images and saved. Each image of the face of cube is processed by LLM, due to get the 9 tile colors. This tile colors build up the cubestring, which is then processed by the kociemba library to get the optimal solution to the cube.
+
+## Cube String notation
+
+<img width="919" height="708" alt="image" src="https://github.com/user-attachments/assets/7df62b44-fc7f-4569-ba37-094678642611" />
 
 ```py
 colour_mappings = {
-
     "red": "F",
     "green": "R",
     "blue": "L",
     "yellow": "U",
     "white": "D",
     "orange": "B"
- 
-}
+ }
 ```
 
 The cubestring is passed to the `kociemba.solve()` function, which return a string containing instructions for solving the cube.
