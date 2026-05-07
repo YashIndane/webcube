@@ -1,55 +1,14 @@
 #import google.generativeai as genai
-from PIL import Image, ImageEnhance, ImageFilter
-from collections import Counter
 import json
-import sys
 import time
 
-# ──────────────────────────────────────────────
-# CONFIGURATION
-# ──────────────────────────────────────────────
+from typing import List, Dict
+from PIL import Image, ImageEnhance, ImageFilter
+from src.image_processing.face import FaceImage
+from src.utilities.webcube_utilities import print_grid
 
 
 MODEL = "gemini-2.5-flash"
-
-
-# ──────────────────────────────────────────────
-# 1. IMAGE PREPROCESSING
-# ──────────────────────────────────────────────
-
-def preprocess_image(image_path: str) -> Image.Image:
-    """Light preprocessing — sharpen edges, subtle contrast boost."""
-    img = Image.open(image_path).convert("RGB")
-    img = ImageEnhance.Contrast(img).enhance(1.2)
-    img = ImageEnhance.Sharpness(img).enhance(1.5)
-    img = img.filter(ImageFilter.UnsharpMask(radius=1, percent=120, threshold=2))
-    return img
-
-
-def crop_tile(image_path: str, row: int, col: int) -> Image.Image:
-    """Crop and upscale a single tile for close-up re-analysis."""
-    img = Image.open(image_path).convert("RGB")
-    img = ImageEnhance.Contrast(img).enhance(1.2)
-    img = ImageEnhance.Sharpness(img).enhance(1.5)
-
-    w, h = img.size
-    tile_w, tile_h = w // 3, h // 3
-    pad = 8
-
-    left   = max(0, col * tile_w + pad)
-    top    = max(0, row * tile_h + pad)
-    right  = min(w, (col + 1) * tile_w - pad)
-    bottom = min(h, (row + 1) * tile_h - pad)
-
-    tile = img.crop((left, top, right, bottom))
-    tile = tile.resize((300, 300), Image.LANCZOS)
-    return tile
-
-
-# ──────────────────────────────────────────────
-# 2. JSON SCHEMAS
-# Note: Gemini SDK does NOT support minItems/maxItems — removed
-# ──────────────────────────────────────────────
 
 COLORS     = ["white", "yellow", "red", "orange", "blue", "green"]
 CONFIDENCE = ["high", "medium", "low"]
@@ -101,11 +60,6 @@ VALIDATION_SCHEMA = {
     },
     "required": ["valid", "issues", "suggested_grid"]
 }
-
-
-# ──────────────────────────────────────────────
-# 3. PROMPTS
-# ──────────────────────────────────────────────
 
 RUBIKS_PROMPT = """
 You are an expert Rubik's cube color detector. You will receive TWO versions of the same cube face:
@@ -161,12 +115,7 @@ If something seems off, correct it in suggested_grid.
 Always return all 3 rows of 3 colors in suggested_grid.
 """
 
-
-# ──────────────────────────────────────────────
-# 4. GEMINI API CALLS
-# ──────────────────────────────────────────────
-
-def call_gemini(parts: list, schema: dict, max_tokens: int = 2048) -> dict:
+def call_gemini(parts: List, schema: Dict, max_tokens: int = 2048) -> Dict:
     """
     Call Gemini with forced JSON schema output.
     Handles empty/null responses gracefully.
@@ -200,11 +149,34 @@ def call_gemini(parts: list, schema: dict, max_tokens: int = 2048) -> dict:
         return {}
 
 
-def call_gemini_validation(img: Image.Image, prompt: str) -> dict:
+def call_gemini_validation(img: Image.Image, prompt: str) -> Dict:
+    """Send a validation request to Gemini and return the parsed result.
+
+    Submits the provided image and prompt to the Gemini model using the
+    predefined VALIDATION_SCHEMA. If Gemini returns an empty or malformed
+    response, the function gracefully falls back to a default valid result
+    to prevent unnecessary corrections downstream.
+
+    Args:
+        img (Image.Image): The PIL Image of the Rubik's Cube face to be
+            validated.
+        prompt (str): The validation prompt instructing Gemini how to
+            assess the grid and suggest corrections if needed.
+
+    Returns:
+        Dict: A dictionary containing the validation result with keys:
+            - 'valid' (bool): Whether the grid passes logical validation.
+            - 'issues' (list): A list of identified issues, empty if valid.
+            - 'suggested_grid' (list): A corrected grid if issues were
+              found, otherwise an empty list.
+        Falls back to ``{"valid": True, "issues": [], "suggested_grid": []}``
+        if Gemini returns an empty or malformed response.
+
+    Side Effects:
+        Prints a warning to stdout if the validation response is empty
+        or malformed.
     """
-    Send validation request.
-    Falls back to 'valid' if Gemini returns empty/bad response.
-    """
+
     result = call_gemini([img, prompt], VALIDATION_SCHEMA, max_tokens=400)
 
     # If response was empty or malformed, treat as valid — skip corrections
@@ -215,8 +187,28 @@ def call_gemini_validation(img: Image.Image, prompt: str) -> dict:
     return result
 
 
-def call_gemini_dual(original_img: Image.Image, processed_img: Image.Image, prompt: str) -> dict:
-    """Send both original and preprocessed images in one Gemini call."""
+def call_gemini_dual(original_img: Image.Image, processed_img: Image.Image, prompt: str) -> Dict:
+    """Send both original and preprocessed images in one Gemini call.
+
+    Constructs a multipart request containing the original and sharpened
+    versions of a Rubik's Cube face, labelled as 'Image 1 - Original photo'
+    and 'Image 2 - Sharpened version' respectively, followed by the text
+    prompt. The request is submitted to Gemini using the predefined
+    TILE_SCHEMA with a generous token budget for detailed tile analysis.
+
+    Args:
+        original_img (Image.Image): The unprocessed PIL Image of the
+            Rubik's Cube face.
+        processed_img (Image.Image): The preprocessed (sharpened/enhanced)
+            PIL Image of the same face for visual comparison.
+        prompt (str): The text instruction guiding Gemini's analysis of
+            the two images.
+
+    Returns:
+        Dict: A parsed dictionary conforming to TILE_SCHEMA, containing
+            the tile-level color analysis results returned by Gemini.
+    """
+
     parts = [
         "Image 1 — Original photo:",
         original_img,
@@ -227,14 +219,26 @@ def call_gemini_dual(original_img: Image.Image, processed_img: Image.Image, prom
     return call_gemini(parts, TILE_SCHEMA, max_tokens=2048)
 
 
-def call_gemini_single_tile(img: Image.Image, prompt: str) -> dict:
-    """Send a single tile image for close-up analysis."""
+def call_gemini_single_tile(img: Image.Image, prompt: str) -> Dict:
+    """Send a single tile image to Gemini for close-up analysis.
+
+    Submits a cropped tile image alongside the given prompt to Gemini
+    using the predefined SINGLE_TILE_SCHEMA with a minimal token budget,
+    suitable for focused single-tile color identification.
+
+    Args:
+        img (Image.Image): A cropped PIL Image of a single Rubik's Cube
+            tile to be analyzed up close.
+        prompt (str): The text instruction guiding Gemini's color
+            classification of the tile.
+
+    Returns:
+        Dict: A parsed dictionary conforming to SINGLE_TILE_SCHEMA,
+            containing the color classification and confidence level
+            for the submitted tile.
+    """
+
     return call_gemini([img, prompt], SINGLE_TILE_SCHEMA, max_tokens=100)
-
-
-# ──────────────────────────────────────────────
-# 5. MAIN PIPELINE
-# ──────────────────────────────────────────────
 
 POSITION_ORDER = [
     "top-left", "top-center", "top-right",
@@ -243,7 +247,7 @@ POSITION_ORDER = [
 ]
 
 
-def analyze_rubiks_face(image_path: str) -> list[list[dict]]:
+def analyze_rubiks_face(image_path: str) -> List[List[Dict]]:
     """
     Full 3-pass pipeline:
     Pass 1 — Dual-image full face analysis
@@ -251,7 +255,8 @@ def analyze_rubiks_face(image_path: str) -> list[list[dict]]:
     Pass 3 — Logical validation using center tile as ground truth
     """
     original_img  = Image.open(image_path).convert("RGB")
-    processed_img = preprocess_image(image_path)
+    face_image = FaceImage(image_path=image_path)
+    processed_img = face_image.preprocess_image()
 
     # ── Pass 1: Dual-image full face analysis ──
     print("🔍 Pass 1: Full face analysis (dual image)...")
@@ -285,7 +290,7 @@ def analyze_rubiks_face(image_path: str) -> list[list[dict]]:
         print(f"\n🔁 Pass 2: Re-checking {len(uncertain)} uncertain tile(s)...")
         for idx, pos in uncertain:
             row, col    = divmod(idx, 3)
-            tile_img    = crop_tile(image_path, row, col)
+            tile_img    = face_image.crop_tile_gemini(row, col)
             tile_result = call_gemini_single_tile(tile_img, SINGLE_TILE_PROMPT)
 
             original  = tiles[pos]["color"]
@@ -329,49 +334,6 @@ def analyze_rubiks_face(image_path: str) -> list[list[dict]]:
         print("  ✅ Grid looks valid.")
 
     return [[tiles[POSITION_ORDER[r * 3 + c]] for c in range(3)] for r in range(3)]
-
-
-# ──────────────────────────────────────────────
-# 6. DISPLAY
-# ──────────────────────────────────────────────
-
-def print_grid(grid: list) -> list:
-
-    COLOR_CODES = {
-        "white":  "\033[97m",
-        "yellow": "\033[93m",
-        "red":    "\033[91m",
-        "orange": "\033[38;5;208m",
-        "blue":   "\033[94m",
-        "green":  "\033[92m",
-    }
-    CONF_ICONS = {"high": "✅", "medium": "⚠️ ", "low": "❌"}
-    RESET = "\033[0m"
-    BOLD  = "\033[1m"
-
-    print(f"\n{BOLD}━━━ Final Rubik's Face Grid ━━━{RESET}")
-    print("+" + "─────────────────+" * 3)
-    for row in grid:
-        color_row = "|"
-        conf_row  = "|"
-        for tile in row:
-            color = tile["color"]
-            conf  = tile["confidence"]
-            code  = COLOR_CODES.get(color, "")
-            color_row += f"{code}{BOLD}  {color:<8}{RESET}       |"
-            conf_row  += f"  {CONF_ICONS.get(conf, '  ')} {conf:<8}  |"
-        print(color_row)
-        print(conf_row)
-        print("+" + "─────────────────+" * 3)
-
-    flat = [tile["color"] for row in grid for tile in row]
-    print(f"\n📋 Flat (top-left → bottom-right):")
-    print(flat)
-
-    counts = Counter(flat)
-    print(f"\n📊 Color counts: {dict(counts)}")
-    return flat
-
 
 def generate_cubestring(*, api_key):
     genai.configure(api_key=api_key)

@@ -1,14 +1,18 @@
+#!/usr/bin/python3
+
+# Main application file for webcube
+
 import logging
-import cubestring_openai
-import cubestring_gemini
 import argparse
 
-from flask import Flask, render_template, request
-from base64 import b64decode
 from PIL import Image
 from io import BytesIO
-from subprocess import getstatusoutput as gso
-from solve_cube import get_moves
+from typing import List
+from base64 import b64decode
+from flask import Flask, render_template, request
+from src.utilities.webcube_utilities import get_moves, build_output_js_file
+from src.workflows import cubestring_gemini, cubestring_openai
+
 
 app = Flask("webcube")
 
@@ -20,6 +24,7 @@ def input():
 
 @app.route("/process", methods=["POST"])
 def get_instructions():
+    """Endpoint to kick the whole workflow"""
     for i in range(6):
         uri_string = request.form.get(f"ur{i}")
         uri_string = uri_string[uri_string.index(",") + 1:]
@@ -32,26 +37,21 @@ def get_instructions():
     elif PLATFORM == 'gemini':
         cubestring = cubestring_gemini.generate_cubestring(api_key=API_KEY)
 
-    moves = get_moves(cubestring)
-  
-    gso("echo 'y' | cp static/k8s.js static/out.js")
+    #moves from kociemba
+    moves: List = get_moves(cubestring)
 
-    for v in moves :
-        v = '"' + v + '"' 
-        gso(f"echo '  speak({v});' >> static/out.js")
-        gso("echo '  await sleep(3500);' >> static/out.js")
-    gso("echo '})()' >> static/out.js")
+    #add instructions to out.js file
+    build_output_js_file(moves)
 
     return render_template("output.html")
-
 
 class NoGetFilter:
     def filter(self, record):
         return  "POST" not in record.getMessage()
 
 
-if __name__ == "__main__":
-    
+def main():
+
     global API_KEY, PLATFORM
 
     #Parse Args
@@ -69,3 +69,6 @@ if __name__ == "__main__":
     log.addFilter(NoGetFilter())
 
     app.run(host="0.0.0.0", port=85)
+
+if __name__ == "__main__":
+    main()

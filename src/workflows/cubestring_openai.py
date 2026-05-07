@@ -1,55 +1,16 @@
-#openai
+import json
+
 from openai import OpenAI
 from pathlib import Path
-from PIL import Image, ImageEnhance, ImageFilter
-import base64
-import json
-import sys
-import io
+from typing import List, Dict
+from src.image_processing.face import FaceImage
+from src.utilities.webcube_utilities import (
+    parse_json,
+    print_grid,
+)
 
 
-# ──────────────────────────────────────────────
-# 1. IMAGE PREPROCESSING (lighter touch for good lighting)
-# ──────────────────────────────────────────────
-
-def preprocess_image(image_path: str) -> bytes:
-    """Light preprocessing — just enough to improve edge clarity."""
-    img = Image.open(image_path).convert("RGB")
-    img = ImageEnhance.Contrast(img).enhance(1.2)       # subtle contrast boost
-    img = ImageEnhance.Sharpness(img).enhance(1.5)      # sharpen tile borders
-    img = img.filter(ImageFilter.UnsharpMask(radius=1, percent=120, threshold=2))
-    buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=97)
-    return buf.getvalue()
-
-
-def to_b64(image_bytes: bytes) -> str:
-    return base64.standard_b64encode(image_bytes).decode("utf-8")
-
-
-def crop_tile(image_path: str, row: int, col: int, grid_size: int = 3) -> bytes:
-    """Crop a single tile with padding, then upscale it."""
-    img = Image.open(image_path).convert("RGB")
-    w, h = img.size
-    tile_w, tile_h = w // grid_size, h // grid_size
-    pad = 8
-
-    left   = max(0, col * tile_w + pad)
-    top    = max(0, row * tile_h + pad)
-    right  = min(w, (col + 1) * tile_w - pad)
-    bottom = min(h, (row + 1) * tile_h - pad)
-
-    tile = img.crop((left, top, right, bottom))
-    tile = tile.resize((300, 300), Image.LANCZOS)
-    buf = io.BytesIO()
-    tile.save(buf, format="JPEG", quality=97)
-    return buf.getvalue()
-
-
-# ──────────────────────────────────────────────
-# 2. PROMPTS
-# ──────────────────────────────────────────────
-
+#Prompts
 RUBIKS_PROMPT = """
 You are an expert Rubik's cube color detector. You will receive TWO versions of the same cube face:
 - Image 1: the original photo
@@ -138,13 +99,31 @@ Return ONLY this JSON:
 }}
 """
 
-
-# ──────────────────────────────────────────────
-# 3. API CALLS
-# ──────────────────────────────────────────────
-
 def call_gpt4o_single(image_bytes: bytes, prompt: str, max_tokens: int = 150) -> str:
-    b64 = to_b64(image_bytes)
+    """Send a single image and prompt to GPT-4o for analysis.
+
+    Encodes the provided image bytes to a base64 JPEG data URL and submits
+    it alongside the given text prompt to the GPT-4o model via the OpenAI
+    chat completions API. The request uses high-detail image processing and
+    a temperature of 0 for deterministic output.
+
+    Args:
+        image_bytes (bytes): Raw image bytes to be encoded and sent to
+            the model as a high-detail JPEG data URL.
+        prompt (str): The text instruction or question to accompany the
+            image in the user message.
+        max_tokens (int, optional): Maximum number of tokens in the
+            model's response. Defaults to 150.
+
+    Returns:
+        str: The text content of the first choice returned by GPT-4o.
+
+    Raises:
+        openai.OpenAIError: If the API request fails or returns an
+            unexpected response.
+    """
+
+    b64 = FaceImage.to_b64(image_bytes)
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{
@@ -161,19 +140,44 @@ def call_gpt4o_single(image_bytes: bytes, prompt: str, max_tokens: int = 150) ->
 
 
 def call_gpt4o_dual(original_bytes: bytes, processed_bytes: bytes, prompt: str, max_tokens: int = 800) -> str:
-    """Send both original and preprocessed images in same API call."""
-    b64_orig = to_b64(original_bytes)
-    b64_proc = to_b64(processed_bytes)
+    """Send both original and preprocessed images in same API call.
+
+    Encodes both the original and preprocessed image bytes as base64 JPEG
+    data URLs and submits them together in a single GPT-4o chat completion
+    request. The images are labelled as 'Image 1 - Original photo' and
+    'Image 2 - Sharpened version' respectively, followed by the text prompt.
+    Both images are sent at high detail and temperature is set to 0 for
+    deterministic output.
+
+    Args:
+        original_bytes (bytes): Raw bytes of the original, unprocessed image.
+        processed_bytes (bytes): Raw bytes of the preprocessed (sharpened)
+            image to be compared against the original.
+        prompt (str): The text instruction or question to accompany both
+            images in the user message.
+        max_tokens (int, optional): Maximum number of tokens in the model's
+            response. Defaults to 800.
+
+    Returns:
+        str: The text content of the first choice returned by GPT-4o.
+
+    Raises:
+        openai.OpenAIError: If the API request fails or returns an
+            unexpected response.
+    """
+
+    b64_orig = FaceImage.to_b64(original_bytes)
+    b64_proc = FaceImage.to_b64(processed_bytes)
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[{
             "role": "user",
             "content": [
-                {"type": "text",      "text": "Image 1 — Original photo:"},
+                {"type": "text", "text": "Image 1 — Original photo:"},
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_orig}", "detail": "high"}},
-                {"type": "text",      "text": "Image 2 — Sharpened version:"},
+                {"type": "text", "text": "Image 2 — Sharpened version:"},
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_proc}", "detail": "high"}},
-                {"type": "text",      "text": prompt}
+                {"type": "text", "text": prompt}
             ]
         }],
         max_tokens=max_tokens,
@@ -181,29 +185,49 @@ def call_gpt4o_dual(original_bytes: bytes, processed_bytes: bytes, prompt: str, 
     )
     return response.choices[0].message.content
 
-
-def parse_json(text: str) -> dict:
-    clean = text.strip()
-    if "```" in clean:
-        clean = clean.split("```")[1]
-        if clean.startswith("json"):
-            clean = clean[4:]
-    return json.loads(clean.strip())
-
-
-# ──────────────────────────────────────────────
-# 4. MAIN PIPELINE
-# ──────────────────────────────────────────────
-
 POSITION_ORDER = [
     "top-left", "top-center", "top-right",
     "mid-left", "mid-center", "mid-right",
     "bot-left", "bot-center", "bot-right"
 ]
 
-def analyze_rubiks_face(image_path: str) -> list[list[dict]]:
+def analyze_rubiks_face(image_path: str) -> List[List[Dict]]:
+    """Analyze a single Rubik's Cube face image using a three-pass GPT-4o pipeline.
+
+    Executes a three-pass analysis strategy to accurately identify the color
+    of each tile in a 3x3 Rubik's Cube face:
+
+    - **Pass 1**: Sends both the original and preprocessed images together to
+      GPT-4o for a full-face dual-image analysis, extracting color and
+      confidence for all 9 tiles.
+    - **Pass 2**: Re-examines any tiles with low or medium confidence by
+      cropping and sending each uncertain tile individually to GPT-4o for
+      a closer single-tile analysis. Corrections are applied where the
+      re-check disagrees with Pass 1.
+    - **Pass 3**: Performs a logical validation of the full 3x3 grid using
+      the center tile as the face's reference color. If issues are detected,
+      GPT-4o's suggested corrections are applied to the final grid.
+
+    Args:
+        image_path (str): Path to the face image file (e.g. 'face0.png')
+            to be analyzed.
+
+    Returns:
+        List[List[Dict]]: A 3x3 nested list of tile dictionaries, where
+            each dict contains at minimum:
+            - 'color' (str): The identified color of the tile.
+            - 'confidence' (str): Confidence level ('high', 'medium', 'low').
+            - 'observation' (str): A brief description supporting the color
+              classification.
+
+    Side Effects:
+        Prints detailed per-pass progress, tile readings, confidence icons,
+        any corrections applied, and validation results to stdout.
+    """
+
     original_bytes  = Path(image_path).read_bytes()
-    processed_bytes = preprocess_image(image_path)
+    face_image = FaceImage(image_path=image_path)
+    processed_bytes = face_image.preprocess_image_openai()
 
     # ── Pass 1: Dual-image full face analysis ──
     print("🔍 Pass 1: Full face analysis (dual image)...")
@@ -228,8 +252,8 @@ def analyze_rubiks_face(image_path: str) -> list[list[dict]]:
         print(f"\n🔁 Pass 2: Re-checking {len(uncertain)} uncertain tile(s)...")
         for idx, pos in uncertain:
             row, col = divmod(idx, 3)
-            tile_bytes  = crop_tile(image_path, row, col)
-            tile_raw    = call_gpt4o_single(tile_bytes, SINGLE_TILE_PROMPT)
+            tile_bytes = face_image.crop_tile_openai(row, col)
+            tile_raw = call_gpt4o_single(tile_bytes, SINGLE_TILE_PROMPT)
             tile_result = parse_json(tile_raw)
 
             original  = tiles[pos]["color"]
@@ -273,51 +297,35 @@ def analyze_rubiks_face(image_path: str) -> list[list[dict]]:
     return [[tiles[POSITION_ORDER[r * 3 + c]] for c in range(3)] for r in range(3)]
 
 
-# ──────────────────────────────────────────────
-# 5. DISPLAY
-# ──────────────────────────────────────────────
-
-def print_grid(grid: list):
-    COLOR_CODES = {
-        "white":  "\033[97m",
-        "yellow": "\033[93m",
-        "red":    "\033[91m",
-        "orange": "\033[38;5;208m",
-        "blue":   "\033[94m",
-        "green":  "\033[92m",
-    }
-    CONF_ICONS = {"high": "✅", "medium": "⚠️ ", "low": "❌"}
-    RESET = "\033[0m"
-    BOLD  = "\033[1m"
-
-    print(f"\n{BOLD}━━━ Final Rubik's Face Grid ━━━{RESET}")
-    print("+" + "─────────────────+" * 3)
-    for row in grid:
-        color_row = "|"
-        conf_row  = "|"
-        for tile in row:
-            color = tile["color"]
-            conf  = tile["confidence"]
-            code  = COLOR_CODES.get(color, "")
-            color_row += f"{code}{BOLD}  {color:<8}{RESET}       |"
-            conf_row  += f"  {CONF_ICONS.get(conf, '  ')} {conf:<8}  |"
-        print(color_row)
-        print(conf_row)
-        print("+" + "─────────────────+" * 3)
-
-    flat = [tile["color"] for row in grid for tile in row]
-    print(f"\n📋 Flat (top-left → bottom-right):")
-    print(flat)
-
-    # Color count summary
-    from collections import Counter
-    counts = Counter(flat)
-    print(f"\n📊 Color counts: { dict(counts) }")
-
-    return flat
-
-
 def generate_cubestring(*, api_key: str):
+    """Analyze all six Rubik's Cube faces and generate a kociemba cube string.
+
+    Initializes a global OpenAI client with the provided API key, then
+    iterates over all six face images (face0.png through face5.png),
+    analyzing each with the Rubik's face analyzer to extract a 3x3 color
+    grid. The flat color lists from all faces are concatenated and mapped
+    to their corresponding kociemba notation characters to produce the
+    final 54-character cube state string.
+
+    Kociemba face mappings:
+        blue -> L, red -> F, yellow -> U,
+        green -> R, orange -> B, white -> D
+
+    Args:
+        api_key (str): The OpenAI API key used to initialize the global
+            client for vision-based face analysis. Must be passed as a
+            keyword argument.
+
+    Returns:
+        str: A 54-character kociemba cube state string representing the
+            colors of all six faces in order, suitable for input to a
+            kociemba solver.
+
+    Side Effects:
+        Sets the global `client` variable to a new OpenAI instance.
+        Prints analysis progress and the final cube string to stdout.
+    """
+
     global client
     client = OpenAI(api_key=api_key)
 
