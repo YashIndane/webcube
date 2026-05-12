@@ -16,7 +16,7 @@ Start with `Red` face with the `White` face down, and take pictures in the order
 ## Running the container
 
 ```
-sudo docker run -dit -p 5000:85 --name <container-name> <image:version> --apikey="<OPENAI/GEMINI API-KEY>" --mod="<openai/gemini>"
+sudo docker run -dit -p 5000:85 --name <container-name> yashindane/webcube-dualllm:v1 --apikey="<OPENAI/GEMINI API-KEY>" --mod="<openai/gemini>"
 ```
 
 ## Working
@@ -51,7 +51,7 @@ build docker image by ->
 
 `$ docker build -t <username>/<repo-name>:<version>`
 
-I have also uploded already build image for this webapp on Docker Hub -> [Link](https://hub.docker.com/repository/docker/yashindane/webcube)
+I have also uploded already build image for this webapp on Docker Hub -> [Link](https://hub.docker.com/repository/docker/yashindane/webcube-dualllm/general)
 
 ## deploying the image in Kubernetes
 
